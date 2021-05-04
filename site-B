@@ -1,0 +1,11 @@
+[Interface]
+Address = 10.10.10.2/30
+PrivateKey = site-B-private-key
+
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE;
+
+[Peer]
+PublicKey = site-A-public-key
+AllowedIPs = 10.10.10.1/32, 192.168.10.0/24
+Endpoint = site-A-WAN_IP_ADDRESS:15300
