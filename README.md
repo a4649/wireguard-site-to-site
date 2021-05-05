@@ -6,7 +6,8 @@
 2. Virtual Machines
 3. OS and networking
 4. Wireguard configuration
-5. Site routing configuration
+5. Connect and check
+6. Site routing configuration
 
 ## Pre-requisites
 
@@ -83,13 +84,101 @@ Apply and restart network:
 sysctl -p
 systemctl restart NetworkManager
 
+Add firewalld rules:
+
+firewall-cmd --add-port=15380/tcp
+firewall-cmd --add-port=15380/udp
+firewall-cmd --zone=public --add-masquerade
+firewall-cmd --runtime-to-permanent
+
+Ensure you have the port 15380 TCP and UDP forwarding to virtual machines IP Address in your router/gateway in both sites
+
 ## Wireguard configuration
 
-Go to wireguard directory and generate public and private key for each virtual machine
+Generate public and private key for each virtual machine
 
-cd /etc/wireguard/
-umask 077
 wg genkey | tee privatekey | wg pubkey > publickey
 
-Copy the configuration files 
+Move the keys to the wireguard folder:
 
+mv publickey /etc/wireguard/
+
+mv privatekey /etc/wireguard/
+
+Copy the configuration file 
+
+git clone https://github.com/a4649/wireguard-site-to-site.git
+
+### For site-A:
+
+Edit the wireguard-site-to-site/site-A/wg0.conf 
+
+At line number 4 replace 'site-A-private-key' with exact content of /etc/wireguard/privatekey
+
+At line number 9 replace 'site-B-public-key' with exact content of /etc/wireguard/publickey in site-B virtual machine
+
+Copy it to wireguard folder:
+
+cp -v wireguard-site-to-site/site-A/wg0.conf /etc/wireguard/
+
+### For site-B:
+
+Edit the wireguard-site-to-site/site-B/wg0.conf 
+
+At line number 3 replace 'site-B-private-key' with exact content of /etc/wireguard/privatekey
+
+At line number 9 replace 'site-A-public-key' with exact content of /etc/wireguard/publickey in site-A virtual machine
+
+At line number 11 replace 'site-A-WAN_IP_ADDRESS' with site A WAN IP Address
+
+Copy it to wireguard folder:
+
+cp -v wireguard-site-to-site/site-B/wg0.conf /etc/wireguard/
+
+## Connect and check
+
+To start the connection(in both sites):
+
+wg-quick up wg0
+
+Stop connection: 
+
+wg-quick down wg0
+
+Checking connection state:
+
+wg show
+
+Start connection when virtual machine boot:
+
+systemctl enable wg-quick@wg0.service
+
+### Check from site-A:
+
+tracepath 192.168.20.200
+
+### Check from site-B:
+
+tracepath 192.168.10.200
+
+## Site routing configuration
+
+Add an static route in your routers/gateways or servers with remote subnets as destination with Virtual Machine IP addresse as next hop
+
+### Site A examples:
+
+Linux server (temporary, you need to add it in a network-script to be permanent): 
+
+ip route add 192.168.20.0/24 via 192.168.10.200 dev eth0
+
+Windows server: 
+
+route -P ADD 192.168.20.0 MASK 255.255.255.0 192.168.10.200
+
+Cisco router: 
+
+ip route 192.168.20.0 255.255.255.0 192.168.10.200
+
+Unifi Gateway: 
+
+Settings > Routing & Firewall > Static Routes 
