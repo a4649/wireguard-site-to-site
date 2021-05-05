@@ -66,7 +66,7 @@ Reboot the VM
 
 modinfo wireguard
 
-Install wireguard-tools package
+Install wireguard-tools package:
 
 dnf install wireguard-tools
 
@@ -75,27 +75,34 @@ dnf install wireguard-tools
 Using any text editor edit the file /etc/sysctl.conf and add the following lines:
 
 net.ipv4.ip_forward = 1
+
 net.ipv6.conf.all.disable_ipv6 = 1
+
 net.ipv6.conf.default.disable_ipv6 = 1
+
 net.ipv6.conf.lo.disable_ipv6 = 1
 
 Apply and restart network:
 
 sysctl -p
+
 systemctl restart NetworkManager
 
 Add firewalld rules:
 
 firewall-cmd --add-port=15380/tcp
+
 firewall-cmd --add-port=15380/udp
+
 firewall-cmd --zone=public --add-masquerade
+
 firewall-cmd --runtime-to-permanent
 
 Ensure you have the port 15380 TCP and UDP forwarding to virtual machines IP Address in your router/gateway in both sites
 
 ## Wireguard configuration
 
-Generate public and private key for each virtual machine
+Generate public and private key for each virtual machine:
 
 wg genkey | tee privatekey | wg pubkey > publickey
 
@@ -105,13 +112,13 @@ mv publickey /etc/wireguard/
 
 mv privatekey /etc/wireguard/
 
-Copy the configuration file 
+Clone configuration files: 
 
 git clone https://github.com/a4649/wireguard-site-to-site.git
 
 ### For site-A:
 
-Edit the wireguard-site-to-site/site-A/wg0.conf 
+Edit the wireguard-site-to-site/site-A/wg0.conf file:
 
 At line number 4 replace 'site-A-private-key' with exact content of /etc/wireguard/privatekey
 
@@ -123,7 +130,7 @@ cp -v wireguard-site-to-site/site-A/wg0.conf /etc/wireguard/
 
 ### For site-B:
 
-Edit the wireguard-site-to-site/site-B/wg0.conf 
+Edit the wireguard-site-to-site/site-B/wg0.conf file:
 
 At line number 3 replace 'site-B-private-key' with exact content of /etc/wireguard/privatekey
 
